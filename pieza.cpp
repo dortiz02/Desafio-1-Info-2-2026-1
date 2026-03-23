@@ -30,7 +30,6 @@ const char* obtenerNombrePieza(int tipo) {
     if (tipo < 0 || tipo >= NUM_PIEZAS) return "?";
     return NOMBRES_PIEZAS[tipo];
 }
- 
 Pieza* crearPiezaAleatoria(int anchoTablero) {
     static bool ini = false;
     if (!ini) {
@@ -40,17 +39,35 @@ Pieza* crearPiezaAleatoria(int anchoTablero) {
     Pieza* p = new Pieza();
     p->tipo    = rand() % NUM_PIEZAS;
     p->mascara = MASCARAS_ORIG[p->tipo];
-    // ERROR: falta restar (MASCARA_TAMANIO / 2) al calcular px.
-    // La mascara ocupa 4 columnas, asi que para centrarla hay que
-    // restar 2 al punto central. Sin esto la pieza aparece
-    // desplazada 2 columnas a la derecha del centro real.
-    // Se detecta visualmente: todas las piezas salen corridas
-    // hacia la derecha.
-    p->px = anchoTablero / 2;
-    p->py = -obtenerOffsetSuperior(p->mascara);
+    p->px      = (anchoTablero / 2) - (MASCARA_TAMANIO / 2);
+    p->py      = -obtenerOffsetSuperior(p->mascara);
     return p;
 }
  
-void rotarPieza(Pieza* pieza) { (void)pieza; } // TODO hito 4
+// ERROR: la formula del destino usa col_dest = i en vez de col_dest = 3-i.
+// Rotar 90 grados horario mueve la celda (i,j) a (j, 3-i).
+// Con col_dest = i se hace una transposicion sobre la diagonal,
+// que no es una rotacion. Las piezas se "transforman" pero no
+// coinciden con los patrones del enunciado: por ejemplo la T
+// rotada no tiene la forma de T girada que se espera.
+// Se detecta comparando la mascara resultante con la figura 1
+// del enunciado despues de presionar W.
+void rotarPieza(Pieza* pieza) {
+    if (pieza == nullptr) return;
+    unsigned short original  = pieza->mascara;
+    unsigned short resultado = 0;
+    for (int i = 0; i < MASCARA_TAMANIO; i++) {
+        for (int j = 0; j < MASCARA_TAMANIO; j++) {
+            int bit_src = 15 - i * 4 - j;
+            if ((original >> bit_src) & 1u) {
+                // BUG: deberia ser (3 - i), no i
+                int bit_dst = 15 - j * 4 - i;
+                resultado |= static_cast<unsigned short>(1u << bit_dst);
+            }
+        }
+    }
+    pieza->mascara = resultado;
+}
+ 
 void destruirPieza(Pieza* pieza) { delete pieza; }
  
