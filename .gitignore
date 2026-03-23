@@ -37,5 +37,9 @@
 *.out
 *.app
 
+build/
+*.o
+*.exe
+*.pro.user
 # debug information files
 *.dwo
